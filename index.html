@@ -13,7 +13,6 @@
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            /* 优先使用系统自带的手写/卡通字体 */
             font-family: "Chalkboard SE", "Comic Sans MS", "Marker Felt", sans-serif;
             transition: background-color 0.4s ease;
         }
@@ -29,44 +28,46 @@
         .doodle-box {
             background: #fff;
             border: 3px solid #222;
-            /* 让边框看起来不规则的关键：不对称圆角 */
             border-radius: 2px 255px 3px 25px / 255px 5px 225px 3px;
-            box-shadow: 4px 4px 0px 0px #222; /* 硬阴影 */
+            box-shadow: 4px 4px 0px 0px #222;
             color: #222;
             transition: all 0.1s ease;
-        }
-        
-        /* 按钮样式 */
-        .btn {
-            pointer-events: auto;
-            padding: 10px 15px;
-            font-size: 16px;
-            font-weight: bold;
+            pointer-events: auto; /* 关键：允许点击 */
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            /* 每个按钮稍微有点不同的歪扭感 */
-            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
         }
-        .btn:active {
-            transform: translate(2px, 2px); /* 按下时移动，抵消阴影 */
+        .doodle-box:active {
+            transform: translate(2px, 2px);
             box-shadow: 2px 2px 0px 0px #222;
             background-color: #f0f0f0;
         }
         
-        /* 设置齿轮按钮 */
-        #btn-settings {
-            position: absolute; top: 15px; left: 15px;
-            font-size: 24px; width: 50px; height: 50px;
+        /* 顶部左右按钮 */
+        .top-btn {
+            position: absolute; 
+            top: 15px; 
+            width: 50px; height: 50px;
+            font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
             padding: 0;
-            border-radius: 50% 40% 60% 40% / 40% 60% 50% 60%; /* 看起来像手画的圆 */
+        }
+
+        /* 设置按钮 (左上) */
+        #btn-settings {
+            left: 15px;
+            border-radius: 50% 40% 60% 40% / 40% 60% 50% 60%;
+        }
+
+        /* 锁定按钮 (右上) */
+        #btn-lock {
+            right: 15px;
+            background-color: #fff3cd; /* 淡黄色 */
+            border-radius: 40% 60% 40% 50% / 60% 40% 60% 50%;
         }
 
         /* 提示文字 */
         #hint {
             position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotate(-2deg); /* 稍微歪一点 */
+            transform: translate(-50%, -50%) rotate(-2deg);
             color: #aaa; 
             font-size: 24px; font-weight: bold;
             pointer-events: none; text-align: center; width: 80%;
@@ -82,16 +83,17 @@
             width: 300px;
             display: none;
             flex-direction: column; gap: 18px;
-            /* 面板的不规则形状 */
             border-radius: 5px 25px 3px 25px / 25px 3px 25px 5px;
             background-image: radial-gradient(#ddd 10%, transparent 10%), radial-gradient(#ddd 10%, transparent 10%);
             background-color: #fff;
             background-position: 0 0, 10px 10px;
-            background-size: 20px 20px; /* 点阵纸纹理 */
+            background-size: 20px 20px;
+            box-shadow: 6px 6px 0px 0px #222;
+            border: 3px solid #222;
         }
 
         .panel-header {
-            border-bottom: 3px dashed #222; /* 虚线分割 */
+            border-bottom: 3px dashed #222;
             padding-bottom: 10px; margin-bottom: 5px;
             text-align: center;
         }
@@ -100,113 +102,70 @@
         .control-group { display: flex; flex-direction: column; gap: 8px; }
         .control-group label { font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
 
-        /* --- 手绘风格滑动条 (Input Range) --- */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-            margin: 10px 0;
-        }
+        /* 滑动条 */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
         input[type=range]:focus { outline: none; }
-        
-        /* 滑动条轨道 */
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 8px;
-            background: #fff;
-            border: 2px solid #222;
-            border-radius: 10px;
-            box-shadow: 2px 2px 0 #222;
-            cursor: pointer;
+            width: 100%; height: 8px; background: #fff; border: 2px solid #222; border-radius: 10px; box-shadow: 2px 2px 0 #222; cursor: pointer;
         }
-        /* 滑动条滑块 */
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 24px; width: 24px;
-            border-radius: 50%;
-            background: #fff;
-            border: 3px solid #222;
-            margin-top: -10px; /* 居中 */
-            box-shadow: 2px 2px 0 #000;
-            cursor: pointer;
-            transition: transform 0.1s;
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #fff; border: 3px solid #222; margin-top: -10px; box-shadow: 2px 2px 0 #000; cursor: pointer; transition: transform 0.1s;
         }
-        input[type=range]::-webkit-slider-thumb:active {
-            background: #222;
-            transform: scale(1.1);
-        }
+        input[type=range]::-webkit-slider-thumb:active { background: #222; transform: scale(1.1); }
 
-        /* --- 主题选择网格 --- */
-        .theme-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 5px;
-        }
+        /* 主题选择 */
+        .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 5px; }
         .theme-btn {
-            height: 45px;
-            border: 2px solid #222;
-            border-radius: 12px 5px 15px 3px / 5px 15px 3px 12px; /* 微妙的不规则 */
-            position: relative; cursor: pointer;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            height: 45px; border: 2px solid #222; border-radius: 12px 5px 15px 3px / 5px 15px 3px 12px; position: relative; cursor: pointer; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); transition: transform 0.1s;
         }
         .theme-btn:active { transform: scale(0.95); }
-        .theme-btn.active {
-            border: 3px solid #222;
-            box-shadow: 3px 3px 0 #222;
-            transform: translate(-1px, -1px) rotate(2deg);
-            z-index: 2;
-        }
-        /* 选中时的对勾标记 */
+        .theme-btn.active { border: 3px solid #222; box-shadow: 3px 3px 0 #222; transform: translate(-1px, -1px) rotate(2deg); z-index: 2; }
         .theme-btn.active::after {
-            content: '✔'; position: absolute;
-            right: -5px; top: -10px;
-            font-size: 14px; color: #222;
-            background: #fff; border: 2px solid #222; border-radius: 50%;
-            width: 18px; height: 18px;
-            display: flex; align-items: center; justify-content: center;
+            content: '✔'; position: absolute; right: -5px; top: -10px; font-size: 14px; color: #222; background: #fff; border: 2px solid #222; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
         }
         .theme-preview-ball {
-            width: 16px; height: 16px;
-            border: 2px solid rgba(0,0,0,0.2);
-            border-radius: 50%;
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.2); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* 底部按钮区 */
-        .action-btns { display: flex; gap: 15px; margin-top: 10px; }
-        #btn-lock { background-color: #fff3cd; flex: 1; }
-        #btn-close { background-color: #f8d7da; flex: 1; }
+        /* 面板底部按钮 */
+        .action-btns { display: flex; margin-top: 10px; }
+        #btn-close { 
+            background-color: #f8d7da; width: 100%; 
+            border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+            padding: 12px; font-size: 16px; font-weight: bold;
+            cursor: pointer; border: 2px solid #222; box-shadow: 3px 3px 0 #222;
+        }
+        #btn-close:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #222; }
 
-        /* --- 解锁界面 --- */
+        /* --- 解锁交互 (右上角) --- */
         #unlock-container {
             position: absolute; top: 15px; right: 15px;
             pointer-events: auto; display: none;
             flex-direction: column; align-items: flex-end;
+            z-index: 20;
         }
-        #btn-unlock {
+        #btn-unlock-trigger {
             background: rgba(255, 255, 255, 0.6);
-            border: 2px dashed #888;
-            color: #555; font-size: 14px;
-            border-radius: 5px;
+            border: 3px dashed #888;
+            color: #555; font-size: 14px; font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            user-select: none;
+            cursor: pointer;
         }
         #unlock-progress-container {
-            width: 100%; height: 10px;
-            border: 2px solid #222;
+            width: 100%; height: 8px;
+            border: 2px solid #555;
             margin-top: 5px;
             background: #fff;
             border-radius: 5px;
             overflow: hidden;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            display: none; /* 只有按下时显示 */
         }
         #unlock-progress {
             height: 100%;
-            background: repeating-linear-gradient(
-                45deg,
-                #4CAF50,
-                #4CAF50 5px,
-                #45a049 5px,
-                #45a049 10px
-            ); /* 斜纹填充 */
+            background: #4CAF50;
             width: 0%;
-            transition: width 0.1s linear;
         }
     </style>
 </head>
@@ -216,16 +175,22 @@
     <canvas id="gameCanvas"></canvas>
 
     <div id="ui-layer">
-        <div id="btn-settings" class="btn doodle-box">⚙️</div>
+        <!-- 左上角：设置 -->
+        <div id="btn-settings" class="top-btn doodle-box">⚙️</div>
         
+        <!-- 右上角：锁定 (默认显示) -->
+        <div id="btn-lock" class="top-btn doodle-box">🔒</div>
+
+        <!-- 右上角：解锁 (锁定后显示) -->
         <div id="unlock-container">
-            <div id="btn-unlock" class="btn">长按 2s 解锁</div>
+            <div id="btn-unlock-trigger">长按 2s 解锁</div>
             <div id="unlock-progress-container">
                 <div id="unlock-progress"></div>
             </div>
         </div>
         
-        <div id="settings-panel" class="doodle-box">
+        <!-- 中间：设置面板 -->
+        <div id="settings-panel">
             <div class="panel-header"><h3>🎨 逗猫配置</h3></div>
             
             <div class="control-group">
@@ -249,14 +214,13 @@
             </div>
 
             <div class="action-btns">
-                <button id="btn-lock" class="btn">🔒 锁定</button>
-                <button id="btn-close" class="btn">✖ 关闭</button>
+                <button id="btn-close">✖ 关闭菜单</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ---------------- 逻辑代码保持一致 ----------------
+        // ---------------- 逻辑保持不变 ----------------
         const THEMES = [
             { name: '经典米白', bg: '#fdfbf7', ball: '#111111' },
             { name: '护眼暗夜', bg: '#2c3e50', ball: '#ecf0f1' },
@@ -381,22 +345,18 @@
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 const baseSpeed = 10 + Math.random() * 3;
                 const currentSpeed = baseSpeed * config.speedMult;
-
-                // 修复 Bug 的核心逻辑：到达预判
                 if (dist <= currentSpeed * 1.2) { 
                     ball.x = ball.targetX; ball.y = ball.targetY;
                     if (Math.random() < 0.35) goOffScreen(); 
                     else { ball.state = 'idle'; ball.stateTimer = 20 + Math.random() * 50; }
                     return; 
                 }
-
                 const desiredAngle = Math.atan2(dy, dx);
                 let turnFactor = 0.15; 
                 if (dist < 200) turnFactor = 0.3;
                 if (dist < 80) turnFactor = 0.8;
                 turnFactor *= Math.max(1, config.speedMult); 
                 turnFactor = Math.min(turnFactor, 1.0);
-
                 ball.angle = lerpAngle(ball.angle, desiredAngle, turnFactor);
                 ball.x += Math.cos(ball.angle) * currentSpeed;
                 ball.y += Math.sin(ball.angle) * currentSpeed;
@@ -523,65 +483,109 @@
         }
         function loop() { updateBehavior(); draw(); requestAnimationFrame(loop); }
 
-        // UI 交互
+        // ---------------- UI 交互 ----------------
         const ui = {
             btnSettings: document.getElementById('btn-settings'),
+            btnLock: document.getElementById('btn-lock'),
             panel: document.getElementById('settings-panel'),
             btnClose: document.getElementById('btn-close'),
-            btnLock: document.getElementById('btn-lock'),
+            
             rangeSpeed: document.getElementById('range-speed'),
             rangeSize: document.getElementById('range-size'),
             rangeStruggle: document.getElementById('range-struggle'),
+            
             valSpeed: document.getElementById('val-speed'),
             valSize: document.getElementById('val-size'),
             valStruggle: document.getElementById('val-struggle'),
+            
             unlockContainer: document.getElementById('unlock-container'),
-            unlockBtn: document.getElementById('btn-unlock'),
+            unlockTrigger: document.getElementById('btn-unlock-trigger'),
+            unlockProgressContainer: document.getElementById('unlock-progress-container'),
             unlockProgress: document.getElementById('unlock-progress')
         };
 
-        ui.btnSettings.onclick = (e) => { e.stopPropagation(); ui.panel.style.display = 'flex'; ui.btnSettings.style.display='none'; };
-        ui.btnClose.onclick = (e) => { 
-            e.stopPropagation(); ui.panel.style.display = 'none'; 
-            if(!config.isLocked) ui.btnSettings.style.display='flex'; 
+        // 打开设置
+        ui.btnSettings.onclick = (e) => {
+            e.stopPropagation();
+            ui.panel.style.display = 'flex';
+            ui.btnSettings.style.display = 'none';
         };
+
+        // 关闭设置
+        ui.btnClose.onclick = (e) => { 
+            e.stopPropagation();
+            ui.panel.style.display = 'none'; 
+            ui.btnSettings.style.display = 'flex'; 
+        };
+
+        // 参数调节
         ui.rangeSpeed.oninput = (e) => { config.speedMult = parseFloat(e.target.value); ui.valSpeed.textContent = config.speedMult+'x'; };
         ui.rangeSize.oninput = (e) => { config.sizeMult = parseFloat(e.target.value); ui.valSize.textContent = config.sizeMult+'x'; };
         ui.rangeStruggle.oninput = (e) => { config.struggleTime = parseFloat(e.target.value); ui.valStruggle.textContent = config.struggleTime+'s'; };
 
+        // --- 锁定逻辑 ---
         ui.btnLock.onclick = (e) => {
-            e.stopPropagation(); config.isLocked = true;
+            e.stopPropagation();
+            config.isLocked = true;
+            
+            // 全屏
             try {
                 if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
                 else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
             } catch(err) {}
-            ui.panel.style.display = 'none'; ui.btnSettings.style.display = 'none'; ui.unlockContainer.style.display = 'flex';
+
+            // 隐藏所有可操作UI，显示解锁提示
+            ui.panel.style.display = 'none';
+            ui.btnSettings.style.display = 'none';
+            ui.btnLock.style.display = 'none';
+            ui.unlockContainer.style.display = 'flex';
         };
 
-        let unlockTimer = null; const UNLOCK_DURATION = 2000;
+        // --- 解锁逻辑 ---
+        let unlockTimer = null; 
+        const UNLOCK_DURATION = 2000;
+
         function startUnlock(e) {
-            e.stopPropagation(); e.preventDefault();
+            e.stopPropagation(); 
+            e.preventDefault();
+            ui.unlockProgressContainer.style.display = 'block';
             ui.unlockProgress.style.width = '0%';
+            // 强制重绘
+            ui.unlockProgress.offsetHeight; 
             ui.unlockProgress.style.transition = `width ${UNLOCK_DURATION}ms linear`;
-            requestAnimationFrame(() => { ui.unlockProgress.style.width = '100%'; });
+            ui.unlockProgress.style.width = '100%';
+            
             unlockTimer = setTimeout(performUnlock, UNLOCK_DURATION);
         }
-        function cancelUnlock() {
+
+        function cancelUnlock(e) {
             if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
-            ui.unlockProgress.style.transition = 'width 0.2s ease-out'; ui.unlockProgress.style.width = '0%';
+            ui.unlockProgress.style.transition = 'none';
+            ui.unlockProgress.style.width = '0%';
+            ui.unlockProgressContainer.style.display = 'none';
         }
+
         function performUnlock() {
             config.isLocked = false;
             if (navigator.vibrate) navigator.vibrate(50);
-            ui.unlockContainer.style.display = 'none'; ui.btnSettings.style.display = 'flex';
+            
+            // 恢复UI
+            ui.unlockContainer.style.display = 'none';
+            ui.btnSettings.style.display = 'flex';
+            ui.btnLock.style.display = 'flex';
+            
+            // 退出全屏
             try { if (document.exitFullscreen) document.exitFullscreen(); } catch(err){}
         }
 
-        ui.unlockBtn.addEventListener('mousedown', startUnlock);
-        ui.unlockBtn.addEventListener('touchstart', startUnlock);
-        ui.unlockBtn.addEventListener('mouseup', cancelUnlock);
-        ui.unlockBtn.addEventListener('mouseleave', cancelUnlock);
-        ui.unlockBtn.addEventListener('touchend', cancelUnlock);
+        ui.unlockTrigger.addEventListener('mousedown', startUnlock);
+        ui.unlockTrigger.addEventListener('touchstart', startUnlock);
+        
+        ui.unlockTrigger.addEventListener('mouseup', cancelUnlock);
+        ui.unlockTrigger.addEventListener('mouseleave', cancelUnlock);
+        ui.unlockTrigger.addEventListener('touchend', cancelUnlock);
+
+        // 防止点击面板穿透到Canvas
         ui.panel.addEventListener('mousedown', e => e.stopPropagation());
         ui.panel.addEventListener('touchstart', e => e.stopPropagation());
 
