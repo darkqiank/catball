@@ -34,6 +34,9 @@
 *   Web Audio API (音效)
 *   无任何第三方库依赖，单文件即可运行。
 
+## 截图
+![image](https://raw.githubusercontent.com/darkqiank/catball/refs/heads/master/screenshot.jpg)
+
 ---
 
 **祝您的猫咪玩得开心！🐾**
