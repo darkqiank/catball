@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>逗猫小球</title>
+    <style>
+        /* --- 全局字体与重置 --- */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #fdfbf7;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            /* 优先使用系统自带的手写/卡通字体 */
+            font-family: "Chalkboard SE", "Comic Sans MS", "Marker Felt", sans-serif;
+            transition: background-color 0.4s ease;
+        }
+        canvas { display: block; }
+        
+        /* --- UI 层基础 --- */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* --- 手绘风格通用类 --- */
+        .doodle-box {
+            background: #fff;
+            border: 3px solid #222;
+            /* 让边框看起来不规则的关键：不对称圆角 */
+            border-radius: 2px 255px 3px 25px / 255px 5px 225px 3px;
+            box-shadow: 4px 4px 0px 0px #222; /* 硬阴影 */
+            color: #222;
+            transition: all 0.1s ease;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            pointer-events: auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            /* 每个按钮稍微有点不同的歪扭感 */
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+        }
+        .btn:active {
+            transform: translate(2px, 2px); /* 按下时移动，抵消阴影 */
+            box-shadow: 2px 2px 0px 0px #222;
+            background-color: #f0f0f0;
+        }
+        
+        /* 设置齿轮按钮 */
+        #btn-settings {
+            position: absolute; top: 15px; left: 15px;
+            font-size: 24px; width: 50px; height: 50px;
+            padding: 0;
+            border-radius: 50% 40% 60% 40% / 40% 60% 50% 60%; /* 看起来像手画的圆 */
+        }
+
+        /* 提示文字 */
+        #hint {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-2deg); /* 稍微歪一点 */
+            color: #aaa; 
+            font-size: 24px; font-weight: bold;
+            pointer-events: none; text-align: center; width: 80%;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        /* --- 设置面板 --- */
+        #settings-panel {
+            pointer-events: auto;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 25px;
+            width: 300px;
+            display: none;
+            flex-direction: column; gap: 18px;
+            /* 面板的不规则形状 */
+            border-radius: 5px 25px 3px 25px / 25px 3px 25px 5px;
+            background-image: radial-gradient(#ddd 10%, transparent 10%), radial-gradient(#ddd 10%, transparent 10%);
+            background-color: #fff;
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px; /* 点阵纸纹理 */
+        }
+
+        .panel-header {
+            border-bottom: 3px dashed #222; /* 虚线分割 */
+            padding-bottom: 10px; margin-bottom: 5px;
+            text-align: center;
+        }
+        .panel-header h3 { margin: 0; font-size: 22px; letter-spacing: 1px; transform: rotate(-1deg); }
+        
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .control-group label { font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
+
+        /* --- 手绘风格滑动条 (Input Range) --- */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        /* 滑动条轨道 */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px;
+            background: #fff;
+            border: 2px solid #222;
+            border-radius: 10px;
+            box-shadow: 2px 2px 0 #222;
+            cursor: pointer;
+        }
+        /* 滑动条滑块 */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px; width: 24px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #222;
+            margin-top: -10px; /* 居中 */
+            box-shadow: 2px 2px 0 #000;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            background: #222;
+            transform: scale(1.1);
+        }
+
+        /* --- 主题选择网格 --- */
+        .theme-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 5px;
+        }
+        .theme-btn {
+            height: 45px;
+            border: 2px solid #222;
+            border-radius: 12px 5px 15px 3px / 5px 15px 3px 12px; /* 微妙的不规则 */
+            position: relative; cursor: pointer;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        .theme-btn:active { transform: scale(0.95); }
+        .theme-btn.active {
+            border: 3px solid #222;
+            box-shadow: 3px 3px 0 #222;
+            transform: translate(-1px, -1px) rotate(2deg);
+            z-index: 2;
+        }
+        /* 选中时的对勾标记 */
+        .theme-btn.active::after {
+            content: '✔'; position: absolute;
+            right: -5px; top: -10px;
+            font-size: 14px; color: #222;
+            background: #fff; border: 2px solid #222; border-radius: 50%;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .theme-preview-ball {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+
+        /* 底部按钮区 */
+        .action-btns { display: flex; gap: 15px; margin-top: 10px; }
+        #btn-lock { background-color: #fff3cd; flex: 1; }
+        #btn-close { background-color: #f8d7da; flex: 1; }
+
+        /* --- 解锁界面 --- */
+        #unlock-container {
+            position: absolute; top: 15px; right: 15px;
+            pointer-events: auto; display: none;
+            flex-direction: column; align-items: flex-end;
+        }
+        #btn-unlock {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px dashed #888;
+            color: #555; font-size: 14px;
+            border-radius: 5px;
+        }
+        #unlock-progress-container {
+            width: 100%; height: 10px;
+            border: 2px solid #222;
+            margin-top: 5px;
+            background: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+        #unlock-progress {
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #4CAF50,
+                #4CAF50 5px,
+                #45a049 5px,
+                #45a049 10px
+            ); /* 斜纹填充 */
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hint">✨ 点击屏幕开始 ✨</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="btn-settings" class="btn doodle-box">⚙️</div>
+        
+        <div id="unlock-container">
+            <div id="btn-unlock" class="btn">长按 2s 解锁</div>
+            <div id="unlock-progress-container">
+                <div id="unlock-progress"></div>
+            </div>
+        </div>
+        
+        <div id="settings-panel" class="doodle-box">
+            <div class="panel-header"><h3>🎨 逗猫配置</h3></div>
+            
+            <div class="control-group">
+                <label>配色主题</label>
+                <div class="theme-grid" id="theme-container"></div>
+            </div>
+
+            <div class="control-group">
+                <label>奔跑速度 <span id="val-speed">1.0x</span></label>
+                <input type="range" id="range-speed" min="0.5" max="2.5" step="0.1" value="1.0">
+            </div>
+            
+            <div class="control-group">
+                <label>小球大小 <span id="val-size">1.0x</span></label>
+                <input type="range" id="range-size" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
+            
+            <div class="control-group">
+                <label>挣扎时长 <span id="val-struggle">1.5s</span></label>
+                <input type="range" id="range-struggle" min="0.5" max="3.0" step="0.1" value="1.5">
+            </div>
+
+            <div class="action-btns">
+                <button id="btn-lock" class="btn">🔒 锁定</button>
+                <button id="btn-close" class="btn">✖ 关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------- 逻辑代码保持一致 ----------------
+        const THEMES = [
+            { name: '经典米白', bg: '#fdfbf7', ball: '#111111' },
+            { name: '护眼暗夜', bg: '#2c3e50', ball: '#ecf0f1' },
+            { name: '清新草地', bg: '#e8f5e9', ball: '#1b5e20' },
+            { name: '高亮红球', bg: '#ffffff', ball: '#d32f2f' },
+            { name: '活力橙',   bg: '#fff3e0', ball: '#e65100' },
+            { name: '深邃紫',   bg: '#f3e5f5', ball: '#4a148c' }
+        ];
+
+        const config = {
+            speedMult: 1.0,
+            sizeMult: 1.0,
+            struggleTime: 1.5,
+            currentThemeIdx: 0,
+            ballColor: THEMES[0].ball,
+            bgColor: THEMES[0].bg,
+            baseRadius: 25,
+            baseHitRadius: 100,
+            isLocked: false
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hint = document.getElementById('hint');
+        let audioCtx = null;
+        let width, height;
+        
+        const ball = {
+            x: 0, y: 0, radius: 25, angle: 0, tailAngle: 0,
+            blinkTimer: 0, isBlinking: false,
+            state: 'running', stateTimer: 0,
+            targetX: 0, targetY: 0
+        };
+
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            ball.x = width / 2; ball.y = height / 2;
+            pickNewTarget();
+            canvas.addEventListener('mousedown', handleInput);
+            canvas.addEventListener('touchstart', handleInput, {passive: false});
+            initThemes();
+            document.body.style.backgroundColor = config.bgColor;
+            requestAnimationFrame(loop);
+        }
+
+        function initThemes() {
+            const container = document.getElementById('theme-container');
+            THEMES.forEach((theme, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'theme-btn';
+                if (index === 0) btn.classList.add('active');
+                btn.style.backgroundColor = theme.bg;
+                btn.title = theme.name;
+                const ballPreview = document.createElement('div');
+                ballPreview.className = 'theme-preview-ball';
+                ballPreview.style.backgroundColor = theme.ball;
+                btn.appendChild(ballPreview);
+                btn.onclick = () => {
+                    config.currentThemeIdx = index;
+                    config.bgColor = theme.bg;
+                    config.ballColor = theme.ball;
+                    document.body.style.backgroundColor = config.bgColor;
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+        }
+
+        function playSqueak() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                const startFreq = 800 + Math.random() * 600;
+                osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        function handleInput(e) {
+            if (hint) hint.style.display = 'none';
+            let ex = e.clientX, ey = e.clientY;
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                ex = e.changedTouches[0].clientX; ey = e.changedTouches[0].clientY;
+                e.preventDefault(); 
+            }
+            const dx = ex - ball.x, dy = ey - ball.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const hitR = config.baseHitRadius * config.sizeMult;
+            if (dist < hitR && ball.state !== 'hiding' && ball.state !== 'escaping') catchBall();
+        }
+
+        function catchBall() {
+            if (ball.state === 'caught') return;
+            ball.state = 'caught';
+            ball.stateTimer = config.struggleTime * 60;
+            playSqueak();
+            setTimeout(() => { if(ball.state==='caught') playSqueak() }, 200);
+            if (config.struggleTime > 1.0) setTimeout(() => { if(ball.state==='caught') playSqueak() }, 600);
+        }
+
+        function updateBehavior() {
+            ball.stateTimer--;
+            ball.radius = config.baseRadius * config.sizeMult;
+
+            if (ball.state === 'running') {
+                const dx = ball.targetX - ball.x;
+                const dy = ball.targetY - ball.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const baseSpeed = 10 + Math.random() * 3;
+                const currentSpeed = baseSpeed * config.speedMult;
+
+                // 修复 Bug 的核心逻辑：到达预判
+                if (dist <= currentSpeed * 1.2) { 
+                    ball.x = ball.targetX; ball.y = ball.targetY;
+                    if (Math.random() < 0.35) goOffScreen(); 
+                    else { ball.state = 'idle'; ball.stateTimer = 20 + Math.random() * 50; }
+                    return; 
+                }
+
+                const desiredAngle = Math.atan2(dy, dx);
+                let turnFactor = 0.15; 
+                if (dist < 200) turnFactor = 0.3;
+                if (dist < 80) turnFactor = 0.8;
+                turnFactor *= Math.max(1, config.speedMult); 
+                turnFactor = Math.min(turnFactor, 1.0);
+
+                ball.angle = lerpAngle(ball.angle, desiredAngle, turnFactor);
+                ball.x += Math.cos(ball.angle) * currentSpeed;
+                ball.y += Math.sin(ball.angle) * currentSpeed;
+            } 
+            else if (ball.state === 'idle') {
+                if (ball.stateTimer <= 0) { ball.state = 'running'; pickNewTarget(); }
+            }
+            else if (ball.state === 'going_hide') {
+                const speed = 14 * config.speedMult;
+                ball.x += Math.cos(ball.angle) * speed;
+                ball.y += Math.sin(ball.angle) * speed;
+                if (ball.x < -200 || ball.x > width + 200 || ball.y < -200 || ball.y > height + 200) {
+                    ball.state = 'hiding'; ball.stateTimer = 50 + Math.random() * 100;
+                }
+            }
+            else if (ball.state === 'hiding') {
+                if (ball.stateTimer <= 0) preparePeek();
+            }
+            else if (ball.state === 'peeking') {
+                const dx = ball.targetX - ball.x;
+                const dy = ball.targetY - ball.y;
+                ball.x += dx * 0.06 * config.speedMult; 
+                ball.y += dy * 0.06 * config.speedMult;
+                if (ball.stateTimer <= 0) {
+                    ball.state = 'running';
+                    ball.targetX = width * 0.2 + Math.random() * width * 0.6;
+                    ball.targetY = height * 0.2 + Math.random() * height * 0.6;
+                }
+            }
+            else if (ball.state === 'caught') {
+                if (ball.stateTimer <= 0) {
+                    ball.state = 'escaping';
+                    const angleToCenter = Math.atan2(height/2 - ball.y, width/2 - ball.x);
+                    ball.angle = angleToCenter + Math.PI + (Math.random() - 0.5);
+                }
+            }
+            else if (ball.state === 'escaping') {
+                const speed = 30 * config.speedMult; 
+                ball.x += Math.cos(ball.angle) * speed;
+                ball.y += Math.sin(ball.angle) * speed;
+                if (ball.x < -300 || ball.x > width + 300 || ball.y < -300 || ball.y > height + 300) {
+                    ball.state = 'hiding'; ball.stateTimer = 80;
+                }
+            }
+        }
+
+        function pickNewTarget() {
+            const padding = 100;
+            ball.targetX = padding + Math.random() * (width - padding * 2);
+            ball.targetY = padding + Math.random() * (height - padding * 2);
+        }
+        function goOffScreen() {
+            ball.state = 'going_hide';
+            const edge = Math.floor(Math.random() * 4);
+            const extra = 250;
+            if (edge === 0) { ball.targetX = Math.random() * width; ball.targetY = -extra; }
+            else if (edge === 1) { ball.targetX = width + extra; ball.targetY = Math.random() * height; }
+            else if (edge === 2) { ball.targetX = Math.random() * width; ball.targetY = height + extra; }
+            else { ball.targetX = -extra; ball.targetY = Math.random() * height; }
+            ball.angle = Math.atan2(ball.targetY - ball.y, ball.targetX - ball.x);
+        }
+        function preparePeek() {
+            ball.state = 'peeking'; ball.stateTimer = 90;
+            const edge = Math.floor(Math.random() * 4); const r = ball.radius;
+            if (edge === 0) { 
+                ball.x = Math.random()*width; ball.y = -r*3;
+                ball.targetX = ball.x; ball.targetY = r*0.5; ball.angle = Math.PI/2;
+            } else if (edge === 1) { 
+                ball.x = width+r*3; ball.y = Math.random()*height;
+                ball.targetX = width-r*0.5; ball.targetY = ball.y; ball.angle = Math.PI;
+            } else if (edge === 2) { 
+                ball.x = Math.random()*width; ball.y = height+r*3;
+                ball.targetX = ball.x; ball.targetY = height-r*0.5; ball.angle = -Math.PI/2;
+            } else { 
+                ball.x = -r*3; ball.y = Math.random()*height;
+                ball.targetX = r*0.5; ball.targetY = ball.y; ball.angle = 0;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.save();
+            let drawX = ball.x; let drawY = ball.y;
+            if (ball.state === 'caught') {
+                drawX += (Math.random() - 0.5) * 25;
+                drawY += (Math.random() - 0.5) * 25;
+            }
+            ctx.translate(drawX, drawY); ctx.rotate(ball.angle);
+
+            const tailSpeed = ball.state === 'caught' ? 1.0 : (ball.state === 'idle' ? 0.05 : 0.3);
+            ball.tailAngle += tailSpeed;
+            const tailSwing = Math.sin(ball.tailAngle) * 0.6;
+            
+            ctx.beginPath(); ctx.moveTo(-10 * config.sizeMult, 0);
+            ctx.quadraticCurveTo(-ball.radius * 2.5, tailSwing * 25 * config.sizeMult, -ball.radius * 3.5, tailSwing * 50 * config.sizeMult);
+            ctx.lineWidth = 8 * config.sizeMult; ctx.strokeStyle = config.ballColor; ctx.lineCap = 'round'; ctx.stroke();
+
+            ctx.beginPath(); ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = config.ballColor; ctx.fill();
+
+            ball.blinkTimer--;
+            if (ball.blinkTimer < 0) { ball.isBlinking = !ball.isBlinking; ball.blinkTimer = ball.isBlinking ? 8 : 100 + Math.random() * 150; }
+            if (!ball.isBlinking || ball.state === 'caught') {
+                const off = 9 * config.sizeMult;
+                drawEye(off+1, -off, ball.state === 'caught');
+                drawEye(off+1, off, ball.state === 'caught');
+            }
+            ctx.restore();
+        }
+
+        function drawEye(offsetX, offsetY, isScared) {
+            ctx.beginPath();
+            const r = (isScared ? 9 : 7) * config.sizeMult;
+            ctx.arc(offsetX, offsetY, r, 0, Math.PI * 2); ctx.fillStyle = 'white'; ctx.fill();
+            ctx.beginPath();
+            const pupilR = (isScared ? 1.5 : 2.5) * config.sizeMult;
+            ctx.arc(offsetX + 2 * config.sizeMult, offsetY, pupilR, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill();
+        }
+
+        function lerpAngle(a, b, t) {
+            const d = b - a;
+            const da = (d + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+            return a + da * t;
+        }
+        function loop() { updateBehavior(); draw(); requestAnimationFrame(loop); }
+
+        // UI 交互
+        const ui = {
+            btnSettings: document.getElementById('btn-settings'),
+            panel: document.getElementById('settings-panel'),
+            btnClose: document.getElementById('btn-close'),
+            btnLock: document.getElementById('btn-lock'),
+            rangeSpeed: document.getElementById('range-speed'),
+            rangeSize: document.getElementById('range-size'),
+            rangeStruggle: document.getElementById('range-struggle'),
+            valSpeed: document.getElementById('val-speed'),
+            valSize: document.getElementById('val-size'),
+            valStruggle: document.getElementById('val-struggle'),
+            unlockContainer: document.getElementById('unlock-container'),
+            unlockBtn: document.getElementById('btn-unlock'),
+            unlockProgress: document.getElementById('unlock-progress')
+        };
+
+        ui.btnSettings.onclick = (e) => { e.stopPropagation(); ui.panel.style.display = 'flex'; ui.btnSettings.style.display='none'; };
+        ui.btnClose.onclick = (e) => { 
+            e.stopPropagation(); ui.panel.style.display = 'none'; 
+            if(!config.isLocked) ui.btnSettings.style.display='flex'; 
+        };
+        ui.rangeSpeed.oninput = (e) => { config.speedMult = parseFloat(e.target.value); ui.valSpeed.textContent = config.speedMult+'x'; };
+        ui.rangeSize.oninput = (e) => { config.sizeMult = parseFloat(e.target.value); ui.valSize.textContent = config.sizeMult+'x'; };
+        ui.rangeStruggle.oninput = (e) => { config.struggleTime = parseFloat(e.target.value); ui.valStruggle.textContent = config.struggleTime+'s'; };
+
+        ui.btnLock.onclick = (e) => {
+            e.stopPropagation(); config.isLocked = true;
+            try {
+                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+                else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
+            } catch(err) {}
+            ui.panel.style.display = 'none'; ui.btnSettings.style.display = 'none'; ui.unlockContainer.style.display = 'flex';
+        };
+
+        let unlockTimer = null; const UNLOCK_DURATION = 2000;
+        function startUnlock(e) {
+            e.stopPropagation(); e.preventDefault();
+            ui.unlockProgress.style.width = '0%';
+            ui.unlockProgress.style.transition = `width ${UNLOCK_DURATION}ms linear`;
+            requestAnimationFrame(() => { ui.unlockProgress.style.width = '100%'; });
+            unlockTimer = setTimeout(performUnlock, UNLOCK_DURATION);
+        }
+        function cancelUnlock() {
+            if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
+            ui.unlockProgress.style.transition = 'width 0.2s ease-out'; ui.unlockProgress.style.width = '0%';
+        }
+        function performUnlock() {
+            config.isLocked = false;
+            if (navigator.vibrate) navigator.vibrate(50);
+            ui.unlockContainer.style.display = 'none'; ui.btnSettings.style.display = 'flex';
+            try { if (document.exitFullscreen) document.exitFullscreen(); } catch(err){}
+        }
+
+        ui.unlockBtn.addEventListener('mousedown', startUnlock);
+        ui.unlockBtn.addEventListener('touchstart', startUnlock);
+        ui.unlockBtn.addEventListener('mouseup', cancelUnlock);
+        ui.unlockBtn.addEventListener('mouseleave', cancelUnlock);
+        ui.unlockBtn.addEventListener('touchend', cancelUnlock);
+        ui.panel.addEventListener('mousedown', e => e.stopPropagation());
+        ui.panel.addEventListener('touchstart', e => e.stopPropagation());
+
+        init();
+    </script>
+</body>
+</html>
