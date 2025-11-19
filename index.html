@@ -7,100 +7,79 @@
     <style>
         /* --- 全局字体与重置 --- */
         body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #fdfbf7;
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
+            margin: 0; overflow: hidden; background-color: #fdfbf7;
+            touch-action: none; user-select: none; -webkit-user-select: none;
             font-family: "Chalkboard SE", "Comic Sans MS", "Marker Felt", sans-serif;
             transition: background-color 0.4s ease;
         }
         canvas { display: block; }
         
-        /* --- UI 层基础 --- */
+        /* --- UI 层 --- */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10;
         }
 
-        /* --- 手绘风格通用类 --- */
+        /* 手绘盒子 */
         .doodle-box {
-            background: #fff;
-            border: 3px solid #222;
+            background: #fff; border: 3px solid #222;
             border-radius: 2px 255px 3px 25px / 255px 5px 225px 3px;
-            box-shadow: 4px 4px 0px 0px #222;
-            color: #222;
-            transition: all 0.1s ease;
-            pointer-events: auto; /* 关键：允许点击 */
-            cursor: pointer;
+            box-shadow: 4px 4px 0px 0px #222; color: #222;
+            transition: all 0.1s ease; pointer-events: auto; cursor: pointer;
         }
         .doodle-box:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px 0px #222;
-            background-color: #f0f0f0;
+            transform: translate(2px, 2px); box-shadow: 2px 2px 0px 0px #222; background-color: #f0f0f0;
         }
         
-        /* 顶部左右按钮 */
+        /* 顶部按钮 */
         .top-btn {
-            position: absolute; 
-            top: 15px; 
-            width: 50px; height: 50px;
-            font-size: 24px;
-            display: flex; align-items: center; justify-content: center;
-            padding: 0;
+            position: absolute; top: 15px; width: 50px; height: 50px;
+            font-size: 24px; display: flex; align-items: center; justify-content: center; padding: 0;
         }
+        #btn-settings { left: 15px; border-radius: 50% 40% 60% 40% / 40% 60% 50% 60%; }
+        #btn-lock { right: 15px; background-color: #fff3cd; border-radius: 40% 60% 40% 50% / 60% 40% 60% 50%; }
 
-        /* 设置按钮 (左上) */
-        #btn-settings {
-            left: 15px;
-            border-radius: 50% 40% 60% 40% / 40% 60% 50% 60%;
-        }
-
-        /* 锁定按钮 (右上) */
-        #btn-lock {
-            right: 15px;
-            background-color: #fff3cd; /* 淡黄色 */
-            border-radius: 40% 60% 40% 50% / 60% 40% 60% 50%;
-        }
-
-        /* 提示文字 */
         #hint {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(-2deg);
-            color: #aaa; 
-            font-size: 24px; font-weight: bold;
+            color: #aaa; font-size: 24px; font-weight: bold;
             pointer-events: none; text-align: center; width: 80%;
             text-shadow: 2px 2px 0px #fff;
         }
 
-        /* --- 设置面板 --- */
+        /* 设置面板 */
         #settings-panel {
-            pointer-events: auto;
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 25px;
-            width: 300px;
-            display: none;
-            flex-direction: column; gap: 18px;
+            pointer-events: auto; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); padding: 25px; width: 300px;
+            display: none; flex-direction: column; gap: 15px;
             border-radius: 5px 25px 3px 25px / 25px 3px 25px 5px;
             background-image: radial-gradient(#ddd 10%, transparent 10%), radial-gradient(#ddd 10%, transparent 10%);
-            background-color: #fff;
-            background-position: 0 0, 10px 10px;
-            background-size: 20px 20px;
-            box-shadow: 6px 6px 0px 0px #222;
-            border: 3px solid #222;
+            background-color: #fff; background-position: 0 0, 10px 10px; background-size: 20px 20px;
+            box-shadow: 6px 6px 0px 0px #222; border: 3px solid #222;
+            max-height: 85vh; overflow-y: auto;
         }
-
         .panel-header {
-            border-bottom: 3px dashed #222;
-            padding-bottom: 10px; margin-bottom: 5px;
-            text-align: center;
+            border-bottom: 3px dashed #222; padding-bottom: 10px; margin-bottom: 5px; text-align: center;
         }
         .panel-header h3 { margin: 0; font-size: 22px; letter-spacing: 1px; transform: rotate(-1deg); }
         
         .control-group { display: flex; flex-direction: column; gap: 8px; }
-        .control-group label { font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
+        .control-group label { font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+
+        /* 开关 */
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .2s; border: 2px solid #222;
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; border: 2px solid #222; transition: .2s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4CAF50; }
+        input:checked + .slider:before { transform: translateX(22px); }
 
         /* 滑动条 */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
@@ -113,7 +92,7 @@
         }
         input[type=range]::-webkit-slider-thumb:active { background: #222; transform: scale(1.1); }
 
-        /* 主题选择 */
+        /* 主题 */
         .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 5px; }
         .theme-btn {
             height: 45px; border: 2px solid #222; border-radius: 12px 5px 15px 3px / 5px 15px 3px 12px; position: relative; cursor: pointer; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); transition: transform 0.1s;
@@ -127,46 +106,24 @@
             width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.2); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* 面板底部按钮 */
         .action-btns { display: flex; margin-top: 10px; }
         #btn-close { 
-            background-color: #f8d7da; width: 100%; 
-            border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
-            padding: 12px; font-size: 16px; font-weight: bold;
-            cursor: pointer; border: 2px solid #222; box-shadow: 3px 3px 0 #222;
+            background-color: #f8d7da; width: 100%; border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+            padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer; border: 2px solid #222; box-shadow: 3px 3px 0 #222;
         }
         #btn-close:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #222; }
 
-        /* --- 解锁交互 (右上角) --- */
         #unlock-container {
-            position: absolute; top: 15px; right: 15px;
-            pointer-events: auto; display: none;
-            flex-direction: column; align-items: flex-end;
-            z-index: 20;
+            position: absolute; top: 15px; right: 15px; pointer-events: auto; display: none;
+            flex-direction: column; align-items: flex-end; z-index: 20;
         }
         #btn-unlock-trigger {
-            background: rgba(255, 255, 255, 0.6);
-            border: 3px dashed #888;
-            color: #555; font-size: 14px; font-weight: bold;
-            padding: 10px 15px;
-            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-            user-select: none;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.6); border: 3px dashed #888; color: #555; font-size: 14px; font-weight: bold; padding: 10px 15px; border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; user-select: none; cursor: pointer;
         }
         #unlock-progress-container {
-            width: 100%; height: 8px;
-            border: 2px solid #555;
-            margin-top: 5px;
-            background: #fff;
-            border-radius: 5px;
-            overflow: hidden;
-            display: none; /* 只有按下时显示 */
+            width: 100%; height: 8px; border: 2px solid #555; margin-top: 5px; background: #fff; border-radius: 5px; overflow: hidden; display: none;
         }
-        #unlock-progress {
-            height: 100%;
-            background: #4CAF50;
-            width: 0%;
-        }
+        #unlock-progress { height: 100%; background: #4CAF50; width: 0%; }
     </style>
 </head>
 <body>
@@ -175,13 +132,9 @@
     <canvas id="gameCanvas"></canvas>
 
     <div id="ui-layer">
-        <!-- 左上角：设置 -->
         <div id="btn-settings" class="top-btn doodle-box">⚙️</div>
-        
-        <!-- 右上角：锁定 (默认显示) -->
         <div id="btn-lock" class="top-btn doodle-box">🔒</div>
 
-        <!-- 右上角：解锁 (锁定后显示) -->
         <div id="unlock-container">
             <div id="btn-unlock-trigger">长按 2s 解锁</div>
             <div id="unlock-progress-container">
@@ -189,13 +142,21 @@
             </div>
         </div>
         
-        <!-- 中间：设置面板 -->
         <div id="settings-panel">
             <div class="panel-header"><h3>🎨 逗猫配置</h3></div>
             
             <div class="control-group">
                 <label>配色主题</label>
                 <div class="theme-grid" id="theme-container"></div>
+            </div>
+
+            <div class="control-group">
+                <label>🔊 沙沙声音效
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="chk-sound" checked>
+                        <span class="slider"></span>
+                    </label>
+                </label>
             </div>
 
             <div class="control-group">
@@ -220,7 +181,118 @@
     </div>
 
     <script>
-        // ---------------- 逻辑保持不变 ----------------
+        // ---------------- 沙子摇晃音效引擎 ----------------
+        let audioCtx = null;
+        let sandGain = null;
+        let isAudioInitialized = false;
+
+        function initAudioSystem() {
+            if (isAudioInitialized) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                
+                // 1. 创建白噪音 (沙子的源头)
+                const bufferSize = audioCtx.sampleRate * 2; 
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = buffer;
+                noiseSource.loop = true;
+
+                // 2. 滤波器：带通 (Bandpass)
+                // 频率设在 4000Hz，Q值设在 1.0，过滤掉低频和超高频
+                // 这样听起来才有"沙子"的质感，而不是"电流声"
+                const sandFilter = audioCtx.createBiquadFilter();
+                sandFilter.type = 'bandpass';
+                sandFilter.frequency.value = 4000; 
+                sandFilter.Q.value = 0.8; 
+
+                // 3. 音量控制
+                sandGain = audioCtx.createGain();
+                sandGain.gain.value = 0; // 初始静音
+
+                // 连接
+                noiseSource.connect(sandFilter);
+                sandFilter.connect(sandGain);
+                sandGain.connect(audioCtx.destination);
+
+                noiseSource.start(0);
+                isAudioInitialized = true;
+
+            } catch (e) {
+                console.warn("Web Audio API error", e);
+            }
+        }
+
+        // 挣扎音效 (保持不变：啾啾声)
+        function playSqueak() {
+            if (!isAudioInitialized || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine'; 
+            osc.frequency.setValueAtTime(600, t);
+            osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(400, t + 0.2);
+
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.6, t + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.25);
+        }
+
+        // 更新沙子声音
+        function updateRunningSound() {
+            if (!isAudioInitialized || !sandGain || !config.enableRunningSound) {
+                if (sandGain) sandGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                return;
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const isMoving = ball.state === 'running' || ball.state === 'escaping';
+            
+            if (isMoving) {
+                // 使用 LFO (低频振荡) 模拟摇晃的节奏
+                // "沙-沙-沙-沙" 的效果
+                
+                // 获取当前时间，制造节奏
+                const time = Date.now() / 1000;
+                
+                // 摇晃速度：随小球速度变快 (8Hz - 16Hz)
+                const shakeSpeed = 8 + (config.speedMult * 6); 
+                
+                // 制造脉冲波形：Math.sin 输出 -1 到 1，我们取绝对值或者只取正半轴
+                // Math.sin(x) > 0 ? 1 : 0 这种是方波，太硬
+                // 使用 sine 的平方可以得到圆润的脉冲
+                const rhythm = Math.pow(Math.sin(time * shakeSpeed * Math.PI), 4);
+
+                // 基础音量 (沙子声不需要太大，高频很明显)
+                const maxVol = 0.2; 
+                
+                // 最终音量 = 节奏 * 最大音量
+                const targetVol = rhythm * maxVol;
+                
+                // 快速响应
+                sandGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.05);
+
+            } else {
+                sandGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+            }
+        }
+
+        // ---------------- 游戏逻辑 ----------------
         const THEMES = [
             { name: '经典米白', bg: '#fdfbf7', ball: '#111111' },
             { name: '护眼暗夜', bg: '#2c3e50', ball: '#ecf0f1' },
@@ -239,13 +311,13 @@
             bgColor: THEMES[0].bg,
             baseRadius: 25,
             baseHitRadius: 100,
-            isLocked: false
+            isLocked: false,
+            enableRunningSound: true
         };
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const hint = document.getElementById('hint');
-        let audioCtx = null;
         let width, height;
         
         const ball = {
@@ -260,12 +332,18 @@
             window.addEventListener('resize', resize);
             ball.x = width / 2; ball.y = height / 2;
             pickNewTarget();
+            
+            document.addEventListener('mousedown', handleGlobalInteract, {once:true});
+            document.addEventListener('touchstart', handleGlobalInteract, {once:true});
+
             canvas.addEventListener('mousedown', handleInput);
             canvas.addEventListener('touchstart', handleInput, {passive: false});
             initThemes();
             document.body.style.backgroundColor = config.bgColor;
             requestAnimationFrame(loop);
         }
+
+        function handleGlobalInteract() { initAudioSystem(); }
 
         function initThemes() {
             const container = document.getElementById('theme-container');
@@ -296,24 +374,8 @@
             canvas.width = width; canvas.height = height;
         }
 
-        function playSqueak() {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                const startFreq = 800 + Math.random() * 600;
-                osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.25);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } catch(e) {}
-        }
-
         function handleInput(e) {
+            initAudioSystem();
             if (hint) hint.style.display = 'none';
             let ex = e.clientX, ey = e.clientY;
             if (e.changedTouches && e.changedTouches.length > 0) {
@@ -331,7 +393,7 @@
             ball.state = 'caught';
             ball.stateTimer = config.struggleTime * 60;
             playSqueak();
-            setTimeout(() => { if(ball.state==='caught') playSqueak() }, 200);
+            setTimeout(() => { if(ball.state==='caught') playSqueak() }, 250);
             if (config.struggleTime > 1.0) setTimeout(() => { if(ball.state==='caught') playSqueak() }, 600);
         }
 
@@ -345,6 +407,7 @@
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 const baseSpeed = 10 + Math.random() * 3;
                 const currentSpeed = baseSpeed * config.speedMult;
+
                 if (dist <= currentSpeed * 1.2) { 
                     ball.x = ball.targetX; ball.y = ball.targetY;
                     if (Math.random() < 0.35) goOffScreen(); 
@@ -481,113 +544,66 @@
             const da = (d + Math.PI * 3) % (Math.PI * 2) - Math.PI;
             return a + da * t;
         }
-        function loop() { updateBehavior(); draw(); requestAnimationFrame(loop); }
+        function loop() { 
+            updateBehavior(); 
+            updateRunningSound();
+            draw(); 
+            requestAnimationFrame(loop); 
+        }
 
-        // ---------------- UI 交互 ----------------
         const ui = {
             btnSettings: document.getElementById('btn-settings'),
             btnLock: document.getElementById('btn-lock'),
             panel: document.getElementById('settings-panel'),
             btnClose: document.getElementById('btn-close'),
-            
+            chkSound: document.getElementById('chk-sound'),
             rangeSpeed: document.getElementById('range-speed'),
             rangeSize: document.getElementById('range-size'),
             rangeStruggle: document.getElementById('range-struggle'),
-            
             valSpeed: document.getElementById('val-speed'),
             valSize: document.getElementById('val-size'),
             valStruggle: document.getElementById('val-struggle'),
-            
             unlockContainer: document.getElementById('unlock-container'),
             unlockTrigger: document.getElementById('btn-unlock-trigger'),
             unlockProgressContainer: document.getElementById('unlock-progress-container'),
             unlockProgress: document.getElementById('unlock-progress')
         };
 
-        // 打开设置
-        ui.btnSettings.onclick = (e) => {
-            e.stopPropagation();
-            ui.panel.style.display = 'flex';
-            ui.btnSettings.style.display = 'none';
-        };
-
-        // 关闭设置
-        ui.btnClose.onclick = (e) => { 
-            e.stopPropagation();
-            ui.panel.style.display = 'none'; 
-            ui.btnSettings.style.display = 'flex'; 
-        };
-
-        // 参数调节
+        ui.btnSettings.onclick = (e) => { e.stopPropagation(); ui.panel.style.display = 'flex'; ui.btnSettings.style.display = 'none'; };
+        ui.btnClose.onclick = (e) => { e.stopPropagation(); ui.panel.style.display = 'none'; ui.btnSettings.style.display = 'flex'; };
+        
+        ui.chkSound.onchange = (e) => { config.enableRunningSound = e.target.checked; };
         ui.rangeSpeed.oninput = (e) => { config.speedMult = parseFloat(e.target.value); ui.valSpeed.textContent = config.speedMult+'x'; };
         ui.rangeSize.oninput = (e) => { config.sizeMult = parseFloat(e.target.value); ui.valSize.textContent = config.sizeMult+'x'; };
         ui.rangeStruggle.oninput = (e) => { config.struggleTime = parseFloat(e.target.value); ui.valStruggle.textContent = config.struggleTime+'s'; };
 
-        // --- 锁定逻辑 ---
         ui.btnLock.onclick = (e) => {
-            e.stopPropagation();
-            config.isLocked = true;
-            
-            // 全屏
-            try {
-                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-                else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-            } catch(err) {}
-
-            // 隐藏所有可操作UI，显示解锁提示
-            ui.panel.style.display = 'none';
-            ui.btnSettings.style.display = 'none';
-            ui.btnLock.style.display = 'none';
-            ui.unlockContainer.style.display = 'flex';
+            e.stopPropagation(); config.isLocked = true;
+            try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch(err) {}
+            ui.panel.style.display = 'none'; ui.btnSettings.style.display = 'none'; ui.btnLock.style.display = 'none'; ui.unlockContainer.style.display = 'flex';
         };
 
-        // --- 解锁逻辑 ---
-        let unlockTimer = null; 
-        const UNLOCK_DURATION = 2000;
-
+        let unlockTimer = null; const UNLOCK_DURATION = 2000;
         function startUnlock(e) {
-            e.stopPropagation(); 
-            e.preventDefault();
-            ui.unlockProgressContainer.style.display = 'block';
-            ui.unlockProgress.style.width = '0%';
-            // 强制重绘
-            ui.unlockProgress.offsetHeight; 
-            ui.unlockProgress.style.transition = `width ${UNLOCK_DURATION}ms linear`;
-            ui.unlockProgress.style.width = '100%';
-            
+            e.stopPropagation(); e.preventDefault();
+            ui.unlockProgressContainer.style.display = 'block'; ui.unlockProgress.style.width = '0%'; ui.unlockProgress.offsetHeight; 
+            ui.unlockProgress.style.transition = `width ${UNLOCK_DURATION}ms linear`; ui.unlockProgress.style.width = '100%';
             unlockTimer = setTimeout(performUnlock, UNLOCK_DURATION);
         }
-
         function cancelUnlock(e) {
             if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
-            ui.unlockProgress.style.transition = 'none';
-            ui.unlockProgress.style.width = '0%';
-            ui.unlockProgressContainer.style.display = 'none';
+            ui.unlockProgress.style.transition = 'none'; ui.unlockProgress.style.width = '0%'; ui.unlockProgressContainer.style.display = 'none';
         }
-
         function performUnlock() {
-            config.isLocked = false;
-            if (navigator.vibrate) navigator.vibrate(50);
-            
-            // 恢复UI
-            ui.unlockContainer.style.display = 'none';
-            ui.btnSettings.style.display = 'flex';
-            ui.btnLock.style.display = 'flex';
-            
-            // 退出全屏
+            config.isLocked = false; if (navigator.vibrate) navigator.vibrate(50);
+            ui.unlockContainer.style.display = 'none'; ui.btnSettings.style.display = 'flex'; ui.btnLock.style.display = 'flex';
             try { if (document.exitFullscreen) document.exitFullscreen(); } catch(err){}
         }
 
-        ui.unlockTrigger.addEventListener('mousedown', startUnlock);
-        ui.unlockTrigger.addEventListener('touchstart', startUnlock);
-        
-        ui.unlockTrigger.addEventListener('mouseup', cancelUnlock);
-        ui.unlockTrigger.addEventListener('mouseleave', cancelUnlock);
+        ui.unlockTrigger.addEventListener('mousedown', startUnlock); ui.unlockTrigger.addEventListener('touchstart', startUnlock);
+        ui.unlockTrigger.addEventListener('mouseup', cancelUnlock); ui.unlockTrigger.addEventListener('mouseleave', cancelUnlock);
         ui.unlockTrigger.addEventListener('touchend', cancelUnlock);
-
-        // 防止点击面板穿透到Canvas
-        ui.panel.addEventListener('mousedown', e => e.stopPropagation());
-        ui.panel.addEventListener('touchstart', e => e.stopPropagation());
+        ui.panel.addEventListener('mousedown', e => e.stopPropagation()); ui.panel.addEventListener('touchstart', e => e.stopPropagation());
 
         init();
     </script>
